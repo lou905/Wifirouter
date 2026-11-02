@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lancer Router Lab</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#0d1520; --panel:#152232; --panel2:#1b2b3f; --line:#2a3f58; --text:#e6eef7; --muted:#93a7bd;
+  --accent:#3fa7ff; --good:#3ccf7a; --warn:#f2b33d; --bad:#ff5c5c; --mono:Consolas,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button{font:inherit;cursor:pointer}
+input,select{font:inherit}
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:#0a111a;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:18px;margin:0;letter-spacing:.3px}
+header h1 span{color:var(--accent)}
+.pill{padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:13px;white-space:nowrap}
+.pill b{font-weight:700}
+.spacer{flex:1}
+.btn{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#04121f;font-weight:700}
+.btn.danger{border-color:#7a2e2e;color:#ffb3b3}
+.btn.small{padding:3px 8px;font-size:12px}
+main{display:grid;grid-template-columns:330px minmax(420px,1fr) 380px;gap:12px;padding:12px;height:calc(100vh - 54px)}
+@media (max-width:1150px){main{grid-template-columns:1fr;height:auto}}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h3{margin:0 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.tabs{display:flex;gap:4px;margin-bottom:8px}
+.tab{flex:1;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px}
+.tab.on{background:var(--panel2);color:var(--text);border-color:var(--accent)}
+.scroll{overflow:auto;min-height:0}
+#left .grow,#right .grow{flex:1;display:flex;flex-direction:column;min-height:0}
+
+/* router card */
+.router-box{display:flex;gap:10px;align-items:center}
+.router-img{width:92px;height:46px;background:linear-gradient(#2c3e55,#1a2636);border-radius:8px 8px 4px 4px;position:relative;border:1px solid #3a5270;flex:none}
+.router-img::before,.router-img::after{content:"";position:absolute;top:-22px;width:4px;height:24px;background:#3a5270;border-radius:2px}
+.router-img::before{left:14px;transform:rotate(-12deg)}.router-img::after{right:14px;transform:rotate(12deg)}
+.leds{position:absolute;bottom:8px;left:10px;display:flex;gap:6px}
+.led{width:7px;height:7px;border-radius:50%;background:#333}
+.led.on{background:var(--good);box-shadow:0 0 6px var(--good)}
+.led.amber{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+.sticker{font:12px/1.4 var(--mono);background:#f4f1e6;color:#222;border-radius:6px;padding:6px 8px;flex:1}
+.sticker b{font-weight:700}
+
+/* missions */
+.mission{border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:var(--panel2)}
+.mhead{display:flex;gap:8px;align-items:center;padding:8px 10px;cursor:pointer}
+.mhead .ic{width:22px;text-align:center}
+.mhead .t{flex:1;font-weight:600}
+.mbody{padding:0 12px 10px 40px;color:#cfdbe8}
+.mbody ol{padding-left:18px;margin:6px 0}
+.mbody li{margin:3px 0}
+.why{color:var(--muted);font-style:italic;margin:4px 0}
+.hint{background:#2a2410;border:1px solid #5a4a1a;color:#ffe3a3;border-radius:8px;padding:6px 8px;margin-top:6px}
+.mission.done .t{color:var(--good)}
+.mission.broke .t{color:var(--warn)}
+.bonus-tag{font-size:11px;color:#c9a7ff;border:1px solid #6a4fa0;border-radius:6px;padding:0 5px;margin-left:4px}
+
+/* hacker view */
+.issue{border-left:4px solid var(--bad);background:#22161a;border-radius:6px;padding:7px 9px;margin-bottom:6px}
+.issue.med{border-color:var(--warn);background:#241e12}
+.issue.low{border-color:#8ab4ff;background:#151d2b}
+.issue b{display:block}
+.issue small{color:#c8b8b8}
+.scorebar{height:10px;background:#0a111a;border-radius:6px;overflow:hidden;margin:6px 0 10px}
+.scorebar div{height:100%}
+
+/* browser */
+.browser{display:flex;flex-direction:column;background:#fff;border-radius:12px;overflow:hidden;flex:1;min-height:520px;border:1px solid var(--line)}
+.bbar{display:flex;gap:8px;align-items:center;background:#dfe3e8;padding:8px 10px}
+.dots span{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px}
+.bbar input{flex:1;border:1px solid #b8c0ca;border-radius:16px;padding:6px 12px;background:#fff;color:#111}
+.bbar .btn{background:#fff;color:#123;border-color:#b8c0ca}
+#page{flex:1;overflow:auto;color:#1b2430;background:#fff}
+.newtab{padding:50px 30px;text-align:center;color:#556}
+.newtab h2{color:#234}
+.err{max-width:560px;margin:60px auto;padding:0 24px;color:#333}
+.err-ico{font-size:44px}
+.err h2{margin:6px 0 10px;color:#202124}
+.err-code{margin-top:16px;font:12px var(--mono);color:#777}
+.site{padding:30px}
+.site h1{margin-top:0}
+.fake-banner{background:#b00020;color:#fff;padding:12px 16px;font-weight:600}
+.bank{max-width:360px;margin:30px auto;border:1px solid #ccd;border-radius:10px;padding:20px;text-align:center}
+.bank input{width:100%;margin:6px 0;padding:8px;border:1px solid #bbc;border-radius:6px}
+
+/* router admin (vendor style) */
+.rt{display:flex;flex-direction:column;min-height:100%;background:#eef2f6}
+.rt-top{display:flex;align-items:center;gap:10px;background:#0b3a6e;color:#fff;padding:10px 16px}
+.rt-logo{font-weight:800;letter-spacing:1px;font-size:17px}
+.rt-top .fw{opacity:.75;font-size:12px}
+.rt-top button{margin-left:auto;background:#fff2;border:1px solid #fff5;color:#fff;border-radius:6px;padding:4px 10px}
+.rt-body{display:flex;flex:1}
+.rt-nav{width:178px;background:#dde5ee;padding:8px 0;flex:none}
+.rt-nav a{display:block;padding:8px 14px;color:#1d3b5c;text-decoration:none;cursor:pointer;font-size:13px}
+.rt-nav a.on{background:#0b3a6e;color:#fff}
+.rt-nav a:hover:not(.on){background:#cbd7e4}
+.rt-main{flex:1;padding:16px 20px;min-width:0}
+.rt-main h2{margin:0 0 12px;color:#0b3a6e;font-size:19px}
+.rt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.rt-box{background:#fff;border:1px solid #cfd8e3;border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.rt-box h3{margin:0 0 6px;font-size:13px;color:#0b3a6e;text-transform:uppercase;letter-spacing:.5px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #e3e8ef;font-size:13px}
+.kv span:last-child{font-family:var(--mono);color:#123}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.row label{width:190px;font-weight:600;color:#2a3b4f;font-size:13px}
+.row input[type=text],.row input[type=password],.row select{border:1px solid #b9c5d3;border-radius:6px;padding:6px 8px;min-width:200px;background:#fff;color:#111;font-family:var(--mono)}
+.row small{color:#5a6b7d}
+.rt-info{background:#e6f1fc;border:1px solid #b4d3f3;border-radius:8px;padding:10px 12px;color:#21415f;font-size:13px;margin:12px 0}
+.rt-info b{color:#0b3a6e}
+.rt-warn{background:#fff4e0;border:1px solid #f0c27b;border-radius:8px;padding:10px 12px;color:#6b4300;font-size:13px;margin:10px 0}
+.rt-save{background:#0b6fd6;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-weight:700;margin-top:8px}
+.rt-save.red{background:#c0392b}
+.rt-msg{margin-top:10px;font-weight:600}
+.rt-msg.ok{color:#137a3a}.rt-msg.bad{color:#b3261e}
+.sec-opt{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #cfd8e3;border-radius:8px;padding:8px 10px;margin:6px 0;cursor:pointer}
+.sec-opt input{margin-top:3px}
+.rate{font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:6px}
+.rate.r0{background:#fde1e1;color:#a11}.rate.r1{background:#fff0d6;color:#8a5a00}.rate.r2{background:#e2f6e7;color:#176c34}
+.meter{height:8px;width:220px;background:#dde3ea;border-radius:5px;overflow:hidden}
+.meter div{height:100%}
+table.rt-t{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+.rt-t th,.rt-t td{border:1px solid #d5dde7;padding:6px 8px;text-align:left}
+.rt-t th{background:#e8eef5;color:#0b3a6e}
+.login{max-width:330px;margin:50px auto;background:#fff;border:1px solid #cfd8e3;border-radius:10px;padding:22px}
+.login h2{margin-top:0;color:#0b3a6e}
+.login input{width:100%;padding:8px;border:1px solid #b9c5d3;border-radius:6px;margin:4px 0 10px;color:#111;background:#fff}
+.progress{height:12px;background:#dde3ea;border-radius:6px;overflow:hidden;max-width:360px}
+.progress div{height:100%;background:#0b6fd6;width:0;transition:width 2.8s linear}
+
+/* laptop */
+.laptop{display:flex;flex-direction:column;flex:1;min-height:0}
+.lstatus{border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--panel2);border:1px solid var(--line)}
+.lstatus.good{border-color:#256b45}.lstatus.bad{border-color:#7a2e2e}
+.net{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--panel2);cursor:pointer}
+.net:hover{border-color:var(--accent)}
+.net .nm{flex:1;font-weight:600}
+.net small{color:var(--muted)}
+.joinbox{background:#0f1a27;border:1px solid var(--line);border-radius:8px;padding:8px;margin:-2px 0 8px}
+.joinbox input,.field input,.field select{width:100%;background:#0a111a;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px;font-family:var(--mono)}
+.field{margin:6px 0}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+.weak{color:var(--warn);font-size:12px}
+.term{flex:1;min-height:220px;background:#05080c;border:1px solid var(--line);border-radius:8px;padding:8px;font:12px/1.4 var(--mono);color:#cfe7ff;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.tline{display:flex;gap:6px;margin-top:6px}
+.tline span{font:12.5px var(--mono);color:#7fc1ff;padding-top:6px}
+.tline input{flex:1;background:#05080c;border:1px solid var(--line);color:#e6f3ff;border-radius:6px;padding:6px 8px;font-family:var(--mono)}
+.quick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.cur{font:12px/1.6 var(--mono);background:#0a111a;border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px}
+.cur .ok{color:var(--good)}.cur .no{color:var(--bad)}
+
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#132235;border:1px solid var(--accent);color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:50;max-width:90vw;box-shadow:0 8px 30px #0008}
+#toast.bad{border-color:var(--bad)}
+#modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+#modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;max-width:520px;width:100%}
+#modal input{width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);background:#0a111a;color:var(--text);margin:8px 0 12px}
+.cert{text-align:center}
+.cert h2{color:var(--good);margin:4px 0}
+.cert .code{font:20px var(--mono);background:#0a111a;border:1px dashed var(--good);padding:8px;border-radius:8px;margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>📡 Lancer <span>Router Lab</span></h1>
+  <span class="pill" id="hName"></span>
+  <span class="pill" id="hMissions"></span>
+  <span class="pill" id="hScore"></span>
+  <span class="spacer"></span>
+  <button class="btn danger small" data-act="restart">Restart Lab</button>
+</header>
+<main>
+  <section class="col" id="left">
+    <div class="card" id="routerCard"></div>
+    <div class="card grow">
+      <div class="tabs">
+        <button class="tab" data-ltab="missions">🎯 Missions</button>
+        <button class="tab" data-ltab="hacker">🕵️ Hacker's View</button>
+      </div>
+      <div class="scroll" id="leftBody"></div>
+    </div>
+  </section>
+  <section class="col" id="center">
+    <div class="browser">
+      <div class="bbar">
+        <span class="dots"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></span>
+        <input id="url" placeholder="Type an address (like a website or your router's IP) and press Enter" autocomplete="off" spellcheck="false">
+        <button class="btn small" data-act="go">Go</button>
+      </div>
+      <div id="page"></div>
+    </div>
+  </section>
+  <section class="col" id="right">
+    <div class="card grow">
+      <h3>💻 Your Laptop</h3>
+      <div class="tabs">
+        <button class="tab" data-rtab="wifi">📶 Wi-Fi</button>
+        <button class="tab" data-rtab="tcpip">🌐 TCP/IP</button>
+        <button class="tab" data-rtab="term">⌨️ Command Prompt</button>
+      </div>
+      <div class="laptop scroll" id="laptop"></div>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+'use strict';
+/* ================= constants ================= */
+const LATEST_FW = '1.4.7';
+const EVIL = '203.0.113.66';
+const GOOD_DNS = {
+  '8.8.8.8':'dns.google (Google)', '8.8.4.4':'dns.google (Google)',
+  '1.1.1.1':'one.one.one.one (Cloudflare)', '1.0.0.1':'one.one.one.one (Cloudflare)',
+  '9.9.9.9':'dns.quad9.net (Quad9)', '149.112.112.112':'dns.quad9.net (Quad9)',
+  '208.67.222.222':'resolver1.opendns.com', '208.67.220.220':'resolver2.opendns.com',
+  '75.75.75.75':'ISP DNS server'
+};
+const SEC_LABEL = { none:'None (Open)', wep:'WEP', wpa:'WPA-PSK (TKIP)', wpa2:'WPA2-PSK (AES)', mixed:'WPA2/WPA3 Mixed', wpa3:'WPA3-SAE' };
+const STICKER = { ssid:'NetHawk-4F2A', key:'12345', url:'192.168.1.1', user:'admin', pass:'admin' };
+const SITES = {
+  'www.lancers.school': { ip:'198.51.100.20' },
+  'lancerbank.com': { ip:'198.51.100.44' },
+  'www.lancerbank.com': { ip:'198.51.100.44' },
+  'www.google.com': { ip:'142.250.72.4' },
+  'www.weather.test': { ip:'198.51.100.77' }
+};
+const OTHERS = [
+  { name:"Mom's Phone", icon:'📱', mac:'A4:83:E7:12:9C:01', kind:'dhcp', slot:0 },
+  { name:'Living Room TV', icon:'📺', mac:'F0:27:2D:44:10:B3', kind:'dhcp', slot:1 },
+  { name:'Printer', icon:'🖨️', mac:'00:1B:A9:7E:33:5C', kind:'static', ip:'192.168.1.50' }
+];
+const LAPTOP_MAC = '8C:85:90:5A:21:7F';
+
+/* ================= helpers ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ip2n(s){
+  if (typeof s !== 'string') return null;
+  const p = s.trim().split('.'); if (p.length !== 4) return null;
+  let n = 0;
+  for (const x of p){ if (!/^\d{1,3}$/.test(x)) return null; const v = +x; if (v > 255) return null; n = n * 256 + v; }
+  return n;
+}
+function n2ip(n){ return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.'); }
+function prefix(m){ let n = ip2n(m), c = 0; while (c < 32 && (n & 0x80000000)){ c++; n = (n << 1) >>> 0; } return c; }
+function maskOK(m){
+  const n = ip2n(m); if (n === null || n === 0) return false;
+  const inv = (~n) >>> 0; if (((inv + 1) & inv) !== 0) return false;
+  const p = prefix(m); return p >= 8 && p <= 30;
+}
+function netOf(ip, m){ return (ip2n(ip) & ip2n(m)) >>> 0; }
+function bcastOf(ip, m){ return (netOf(ip, m) | ((~ip2n(m)) >>> 0)) >>> 0; }
+function sameNet(a, b, m){ return ip2n(a) !== null && ip2n(b) !== null && maskOK(m) && netOf(a, m) === netOf(b, m); }
+function isHost(ip, m){ const n = ip2n(ip); return n !== netOf(ip, m) && n !== bcastOf(ip, m); }
+function isPrivate(ip){
+  const n = ip2n(ip); if (n === null) return false;
+  const a = n >>> 24, b = (n >>> 16) & 255;
+  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+}
+function inPool(ip){ const r = R(), n = ip2n(ip); return r.dhcpOn && n >= ip2n(r.poolStart) && n <= ip2n(r.poolEnd); }
+function pwClasses(p){ return [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(x => x.test(p)).length; }
+const COMMON = ['password','12345678','123456789','1234567890','qwerty','qwerty123','admin','letmein','password1','password123','iloveyou','lancers','lancers1','football','welcome','abc12345'];
+function pwScore(p){
+  if (!p) return 0;
+  if (COMMON.includes(p.toLowerCase())) return 0;
+  let s = 0; const c = pwClasses(p);
+  if (p.length >= 8) s++;
+  if (p.length >= 12) s++;
+  if (c >= 3) s++;
+  if (c === 4 && p.length >= 10) s++;
+  return Math.min(4, s);
+}
+const PW_LABEL = ['Very weak','Weak','Fair','Strong','Very strong'];
+const PW_COLOR = ['#d93025','#e8710a','#f9ab00','#1e8e3e','#137333'];
+function strongAdmin(p){ return p !== 'admin' && p.length >= 10 && pwClasses(p) >= 3 && pwScore(p) >= 3; }
+function strongWifi(p){ return p.length >= 12 && pwScore(p) >= 3; }
+
+/* ================= state ================= */
+function defRouter(){
+  return { adminPass:'admin', lanIP:'192.168.1.1', mask:'255.255.255.0', dhcpOn:true, poolStart:'192.168.1.100', poolEnd:'192.168.1.199', lease:1440,
+    dns1:EVIL, dns2:'', ssid:STICKER.ssid, broadcast:true, band:'2.4 GHz', channel:'Auto',
+    security:'wep', wifiPass:STICKER.key, wps:true, remote:true, upnp:true,
+    guest:false, guestSsid:'NetHawk-Guest', guestPass:'', guestIso:true, firmware:'1.0.2' };
+}
+function defLaptop(){ return { joined:null, mode:'dhcp', lease:null, st:{ ip:'', mask:'', gw:'', dns1:'', dns2:'' }, ranIpconfig:false }; }
+function fresh(){
+  return { v:2, name:'', start:Date.now(), router:defRouter(), laptop:defLaptop(), others:{ ssid:STICKER.ssid, pass:STICKER.key },
+    session:false, url:'', rpage:'status', ltabL:'missions', ltab:'wifi',
+    term:['Lancer Command Prompt (simulated)', 'Type  help  to see the commands you can use.', ''], hist:[],
+    done:{}, ever:{}, hintShown:{}, hints:0, open:'m1', fwChecked:false, finalPing:false, finalVisit:false,
+    certShown:false, joinTarget:null, hiddenForm:false, reconMsg:'' };
+}
+let S;
+const KEY = 'lancerRouterLab.v2';
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function load(){
+  try { const t = localStorage.getItem(KEY); if (t){ const o = JSON.parse(t); if (o && o.v === 2) return o; } } catch (e) {}
+  return null;
+}
+S = load() || fresh();
+const R = () => S.router, L = () => S.laptop;
+
+/* ================= network model ================= */
+function wifiUp(){
+  const j = L().joined, r = R();
+  if (!j || j.ssid !== r.ssid) return false;
+  return r.security === 'none' || j.pass === r.wifiPass;
+}
+function wifiProblem(){
+  const j = L().joined, r = R();
+  if (!j) return 'Not connected to any Wi-Fi network.';
+  if (j.ssid !== r.ssid) return `"${j.ssid}" is no longer available. (Did the network name change?)`;
+  if (r.security !== 'none' && j.pass !== r.wifiPass) return `Couldn't connect to "${j.ssid}": the Wi-Fi password is incorrect or was changed.`;
+  return '';
+}
+function doLease(){
+  const r = R(), l = L();
+  const apipa = { ip:'169.254.37.112', mask:'255.255.0.0', gw:'', dns1:'', dns2:'' };
+  if (!r.dhcpOn){ l.lease = apipa; return 'nodhcp'; }
+  const s = ip2n(r.poolStart), e = ip2n(r.poolEnd);
+  if (e - s + 1 < 3){ l.lease = apipa; return 'full'; }
+  l.lease = { ip:n2ip(s + 2), mask:r.mask, gw:r.lanIP, dns1:r.lanIP, dns2:'' };
+  return 'ok';
+}
+function cfg(){
+  if (!wifiUp()) return null;
+  const l = L();
+  if (l.mode === 'dhcp') return l.lease ? Object.assign({ src:'dhcp' }, l.lease) : { ip:'', mask:'', gw:'', dns1:'', dns2:'', src:'dhcp' };
+  return Object.assign({ src:'static' }, l.st);
+}
+function othersOnline(){ const r = R(), o = S.others; return o.ssid === r.ssid && (r.security === 'none' || o.pass === r.wifiPass); }
+function otherDevices(){
+  const r = R(), on = othersOnline();
+  return OTHERS.map(d => {
+    let ip = d.kind === 'static' ? d.ip : (r.dhcpOn ? n2ip(ip2n(r.poolStart) + d.slot) : '');
+    let online = on && !!ip && (d.kind !== 'static' || sameNet(ip, r.lanIP, r.mask));
+    let note = !on ? 'Offline: needs the new Wi-Fi name/password' : (!online ? `Offline: static IP ${d.ip} is not on the new network` : '');
+    return Object.assign({}, d, { ip, online, note });
+  });
+}
+function reach(c){
+  const r = R();
+  if (!c) return { ok:false, why:'Wi-Fi is not connected.' };
+  if (!c.ip) return { ok:false, why:'Your laptop has no IP address.' };
+  if (ip2n(c.ip) === null) return { ok:false, why:`"${c.ip}" is not a valid IP address.` };
+  if (!maskOK(c.mask)) return { ok:false, why:`"${c.mask}" is not a valid subnet mask.` };
+  if (c.ip.startsWith('169.254.')) return { ok:false, why:'Your laptop gave itself a 169.254.x.x address. That happens when no DHCP server answers.' };
+  if (!sameNet(c.ip, r.lanIP, c.mask) || !sameNet(c.ip, r.lanIP, r.mask)) return { ok:false, why:`Your IP address (${c.ip}) is not on the same network as the router (${r.lanIP}).` };
+  if (c.ip === r.lanIP) return { ok:false, why:`IP conflict: your laptop is using the router's own address (${c.ip}).` };
+  if (!isHost(c.ip, r.mask)) return { ok:false, why:`${c.ip} is the network or broadcast address. It can't be used by a device.` };
+  const clash = otherDevices().find(d => d.online && d.ip === c.ip);
+  if (clash) return { ok:false, why:`IP conflict: ${clash.name} is already using ${c.ip}.` };
+  return { ok:true };
+}
+function net(c){
+  const a = reach(c); if (!a.ok) return a;
+  if (c.gw !== R().lanIP) return { ok:false, why: c.gw ? `Your default gateway (${c.gw}) is wrong. It must be the router's address.` : "You have no default gateway, so traffic can't leave your local network." };
+  return { ok:true };
+}
+function cls(d){ if (!d) return 'none'; if (GOOD_DNS[d]) return 'good'; if (d === EVIL) return 'evil'; return 'dead'; }
+function upstream(){
+  const r = R(); const a = cls(r.dns1);
+  if (a === 'good' || a === 'evil') return a;
+  const b = cls(r.dns2);
+  if (b === 'good' || b === 'evil') return b;
+  return 'timeout';
+}
+function askServer(srv, c){
+  if (!srv) return 'none';
+  if (srv === R().lanIP) return reach(c).ok ? upstream() : 'timeout';
+  if (!net(c).ok) return 'timeout';
+  const k = cls(srv); return k === 'dead' ? 'timeout' : k;
+}
+function siteIP(name){
+  if (SITES[name]) return SITES[name].ip;
+  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(name)){
+    let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return '93.184.' + (h % 200 + 10) + '.' + (h % 250 + 2);
+  }
+  return null;
+}
+function lookup(name, c){
+  name = name.toLowerCase();
+  let used = null, res = 'none';
+  for (const srv of [c.dns1, c.dns2]){
+    if (!srv) continue;
+    used = srv; res = askServer(srv, c);
+    if (res === 'good' || res === 'evil') break;
+  }
+  if (res === 'good'){ const ip = siteIP(name); return ip ? { st:'ok', ip, srv:used } : { st:'nx', srv:used }; }
+  if (res === 'evil') return { st:'evil', ip:EVIL, srv:used };
+  return { st: used ? 'timeout' : 'none', srv:used };
+}
+function srvName(srv){
+  if (!srv) return 'UnKnown';
+  if (srv === R().lanIP) return 'router.home';
+  return GOOD_DNS[srv] ? GOOD_DNS[srv].split(' ')[0] : 'UnKnown';
+}
+function pingable(ip, c){
+  const r = R();
+  if (!c || !c.ip) return false;
+  if (ip === c.ip) return true;
+  if (ip === r.lanIP) return reach(c).ok;
+  if (isPrivate(ip)){ if (!reach(c).ok) return false; return otherDevices().some(d => d.online && d.ip === ip); }
+  return net(c).ok;
+}
+
+/* ================= security / hacker view ================= */
+function issues(){
+  const r = R(), out = [];
+  if (!strongAdmin(r.adminPass)) out.push({ sev:'high', t: r.adminPass === 'admin' ? 'Default admin password (admin/admin)' : 'Weak admin password',
+    d:'Default router logins are listed online for every brand. Anyone who joins your Wi-Fi can log in and change everything.' });
+  if (r.security === 'none') out.push({ sev:'high', t:'Open Wi-Fi (no encryption)', d:'Anyone nearby can join, and everything sent over the air can be read.' });
+  if (r.security === 'wep') out.push({ sev:'high', t:'WEP encryption', d:'WEP was broken in 2001. Free tools crack it in a few minutes.' });
+  if (r.security === 'wpa') out.push({ sev:'med', t:'WPA (TKIP) is outdated', d:'TKIP has known weaknesses and is no longer allowed on new devices. Use WPA2 (AES) or WPA3.' });
+  if (r.security !== 'none' && !strongWifi(r.wifiPass)) out.push({ sev:'med', t:'Weak Wi-Fi password', d:'An attacker can capture the Wi-Fi handshake and try millions of guesses offline. Short or common passwords fall fast.' });
+  if (r.wps) out.push({ sev:'high', t:'WPS is ON', d:'The 8-digit WPS PIN is checked in two halves, so there are only about 11,000 possibilities. Tools like Reaver can guess it in hours and reveal your Wi-Fi password, no matter how strong it is.' });
+  const up = upstream();
+  if (up === 'evil') out.push({ sev:'high', t:'DNS hijacked (203.0.113.66)', d:"Your router sends every name lookup to a server the attacker controls. They can send you to fake websites that look real." });
+  if (r.remote) out.push({ sev:'high', t:'Remote management ON', d:'The admin login page can be reached from anywhere on the internet. Bots scan for these all day.' });
+  if (r.upnp) out.push({ sev:'med', t:'UPnP ON', d:'Any device or malware on the network can open ports through your firewall without asking.' });
+  if (r.firmware !== LATEST_FW) out.push({ sev:'med', t:`Old firmware (${r.firmware})`, d:'Old firmware has publicly known vulnerabilities that attackers can look up and use.' });
+  if (/nethawk|4f2a|ax1500/i.test(r.ssid)) out.push({ sev:'low', t:'Network name reveals the router brand', d:'The SSID tells attackers exactly which router you have, so they can look up its default passwords and known bugs.' });
+  return out;
+}
+const SEV_PTS = { high:15, med:10, low:5 };
+function score(){ return Math.max(0, 100 - issues().reduce((a, i) => a + SEV_PTS[i.sev], 0)); }
+
+/* ================= missions ================= */
+const MISSIONS = [
+  { id:'m1', t:'Get Connected', why:'You can\'t manage a network you aren\'t on.',
+    steps:['Look at the sticker on the router (top left).', 'Open the 📶 Wi-Fi tab on your laptop.', 'Click the network named on the sticker and type its Wi-Fi key.'],
+    hint:'The sticker says the default network is NetHawk-4F2A and the key is 12345.', check:() => wifiUp() },
+  { id:'m2', t:'Recon: Find Your Network Info', why:'Every network job starts by finding your IP address, subnet mask, and default gateway.',
+    steps:['Open the ⌨️ Command Prompt tab.', 'Type  ipconfig  and press Enter.', 'Write down your IPv4 Address, Subnet Mask, and Default Gateway.', 'Type your Default Gateway in the box below and click Check.'],
+    hint:'The Default Gateway is the router. On this network it ends in .1', check:() => !!S.done.recon, recon:true },
+  { id:'m3', t:'Log In to the Router', why:"The router's admin page lives at the Default Gateway address.",
+    steps:['Click in the browser address bar.', 'Type your Default Gateway (for example http://192.168.x.x) and press Enter.', 'Log in with the username and password on the sticker.'],
+    hint:'Type 192.168.1.1 in the address bar. Username: admin   Password: admin', check:() => !!S.done.login },
+  { id:'m4', t:'Change the Admin Password', why:'admin/admin is the first thing any attacker tries.',
+    steps:['In the router, open Administration.', 'Type the old password, then a new one at least 10 characters long with upper case, lower case, a number, and a symbol.', 'Save. You will have to log back in with the new password. Write it down!'],
+    hint:'Try a passphrase like  Blue-Tiger-88!  (but make up your own).', check:() => strongAdmin(R().adminPass) },
+  { id:'m5', t:'Fix the Hijacked DNS', why:'DNS turns names like lancerbank.com into IP addresses. Someone changed yours!',
+    steps:['In the browser, go to  lancerbank.com  and see what happens.', 'In Command Prompt, run  nslookup lancerbank.com  and look at the address it returns.', 'In the router, open Internet & DNS. Change the Primary DNS to a trusted server (1.1.1.1, 8.8.8.8, or 9.9.9.9) and set a different trusted Secondary DNS.', 'Save, then visit lancerbank.com again.'],
+    hint:'Primary DNS: 1.1.1.1   Secondary DNS: 9.9.9.9', check:() => upstream() === 'good' && cls(R().dns1) === 'good' },
+  { id:'m6', t:'Turn Off WPS', why:'WPS is a shortcut button for joining Wi-Fi, and its PIN can be cracked in hours.',
+    steps:['Open Wireless Security.', 'Turn WPS off.', 'Save.'], hint:'Uncheck "Enable WPS" at the bottom of Wireless Security and click Save.', check:() => !R().wps },
+  { id:'m7', t:'Upgrade to WPA2 or WPA3', why:'WEP can be cracked in minutes. WPA3 is the newest and strongest protection.',
+    steps:['Open Wireless Security.', 'Choose WPA3-SAE (best) or WPA2-PSK (AES).', 'Create a Wi-Fi password at least 12 characters long that scores Strong.', 'Save. Your laptop will be kicked off, so reconnect in the 📶 Wi-Fi tab with the new password.'],
+    hint:'Changing the Wi-Fi password disconnects every device. Rejoin your network in the Wi-Fi tab.', check:() => ['wpa2','mixed','wpa3'].includes(R().security) && strongWifi(R().wifiPass) && wifiUp() },
+  { id:'m8', t:'Rename Your Network (SSID)', why:'"NetHawk-4F2A" tells attackers exactly what router you own.',
+    steps:['Open Wireless.', 'Change the Network Name (SSID) to something that does not show the brand, model, your name, or your address.', 'Save, then reconnect your laptop to the new name.'],
+    hint:'Something like  Lancer-Lab-7  works. Then join it in the Wi-Fi tab.', check:() => !/nethawk|4f2a|ax1500/i.test(R().ssid) && wifiUp() },
+  { id:'m9', t:'Move the Network (TCP/IP)', why:'Network admins plan their own address ranges. You will move this one to 10.10.10.0/24.',
+    steps:['Open Network (TCP/IP).', 'Set Router IP to 10.10.10.1 and Subnet Mask to 255.255.255.0.', 'Set the DHCP pool from 10.10.10.100 to 10.10.10.150.', 'Save. The router restarts and the admin page stops loading. Why?', 'In Command Prompt run  ipconfig /renew , then browse to http://10.10.10.1 and log in again.'],
+    hint:'Your laptop still has its old 192.168.1.x address until it asks DHCP for a new one with  ipconfig /renew', check:() => {
+      const r = R(); return r.lanIP === '10.10.10.1' && r.mask === '255.255.255.0' && r.poolStart === '10.10.10.100' && r.poolEnd === '10.10.10.150' && reach(cfg()).ok; } },
+  { id:'m10', t:'Set a Static IP Address', why:'Printers and servers need an address that never changes.',
+    steps:['Open the 🌐 TCP/IP tab on your laptop and choose Manual.', 'IP Address: 10.10.10.25 (outside the DHCP pool)', 'Subnet Mask: 255.255.255.0   Router (Gateway): 10.10.10.1', 'DNS: 1.1.1.1 and 9.9.9.9. Click Apply.', 'Test it: ping 8.8.8.8 and open www.lancers.school'],
+    hint:'A static IP must be on the same network as the router and outside the DHCP pool (.100 to .150).', check:() => {
+      const c = cfg(); return L().mode === 'static' && !!c && net(c).ok && !inPool(c.ip) && lookup('www.lancers.school', c).st === 'ok'; } },
+  { id:'m11', t:'Close the Back Doors', why:'Remote management and UPnP let outsiders and malware in.',
+    steps:['Open Advanced.', 'Turn off Remote Management.', 'Turn off UPnP.', 'Save.'], hint:'Uncheck both boxes on the Advanced page and click Save.', check:() => !R().remote && !R().upnp },
+  { id:'m12', t:'Update the Firmware', why:'Updates patch security holes that attackers already know about.',
+    steps:['Open Firmware Update.', 'Click Check for Updates, then Install.', 'Wait for the restart, then log back in.'], hint:'Firmware Update → Check for Updates → Install Update.', check:() => R().firmware === LATEST_FW },
+  { id:'m13', t:'Final Test', why:'A secure network still has to work!',
+    steps:['Finish missions 1–12 so your Security Score is 100.', 'In Command Prompt, run  ping 8.8.8.8', 'In the browser, open  www.lancers.school'],
+    hint:'Check the Hacker\'s View tab for anything still unsafe. Do the ping and the website AFTER everything else is done.', check:() => S.finalPing && S.finalVisit && allBeforeFinal() && score() === 100 },
+  { id:'b1', bonus:true, t:'Bonus: Build a Guest Network', why:'Visitors and smart gadgets should never be on the same network as your important devices.',
+    steps:['Open Guest Network and turn it on.', 'Give it its own name and a strong password (12+ characters).', 'Keep "Isolate guests from my network" checked. Save.'],
+    hint:'Guest password must be 12+ characters and score Strong.', check:() => R().guest && strongWifi(R().guestPass) && R().guestIso },
+];
+const REQ = MISSIONS.filter(m => !m.bonus);
+function allBeforeFinal(){ return REQ.slice(0, 12).every(m => m.check()); }
+function doneCount(){ return REQ.filter(m => m.check()).length; }
+
+/* ================= UI: header, router card, left ================= */
+function renderHeader(){
+  $('#hName').innerHTML = '👤 <b>' + esc(S.name || 'Student') + '</b>';
+  $('#hMissions').innerHTML = '🎯 Missions <b>' + doneCount() + '/' + REQ.length + '</b>';
+  const sc = score(), col = sc >= 100 ? 'var(--good)' : sc >= 60 ? 'var(--warn)' : 'var(--bad)';
+  $('#hScore').innerHTML = '🛡️ Security Score <b style="color:' + col + '">' + sc + '</b>';
+}
+function renderRouterCard(){
+  const r = R(), inet = true, wifi = true;
+  $('#routerCard').innerHTML = `<h3>📦 The Router</h3>
+  <div class="router-box">
+    <div class="router-img"><div class="leds"><span class="led on" title="Power"></span><span class="led ${inet ? 'on' : ''}" title="Internet"></span><span class="led ${wifi ? (r.security === 'none' || r.security === 'wep' ? 'amber' : 'on') : ''}" title="Wi-Fi"></span><span class="led ${r.wps ? 'amber' : ''}" title="WPS"></span></div></div>
+    <div class="sticker"><b>NetHawk AX1500</b><br>Default Wi-Fi: <b>${STICKER.ssid}</b><br>Wi-Fi Key: <b>${STICKER.key}</b><br>Admin: http://${STICKER.url}<br>User: <b>${STICKER.user}</b> &nbsp;Pass: <b>${STICKER.pass}</b></div>
+  </div>
+  <div style="margin-top:8px;display:flex;gap:6px;align-items:center"><button class="btn small danger" data-act="factory">⏺ Press RESET (factory reset)</button><small style="color:var(--muted)">Undo everything</small></div>`;
+}
+function missionStatus(m){
+  const now = m.check();
+  if (now) return 'done';
+  if (S.ever[m.id]) return 'broke';
+  return 'todo';
+}
+function renderLeft(){
+  document.querySelectorAll('[data-ltab]').forEach(b => b.classList.toggle('on', b.dataset.ltab === S.ltabL));
+  const el = $('#leftBody');
+  if (S.ltabL === 'hacker'){
+    const list = issues(), sc = score(), col = sc >= 100 ? 'var(--good)' : sc >= 60 ? 'var(--warn)' : 'var(--bad)';
+    el.innerHTML = `<div><b>Security Score: <span style="color:${col}">${sc}/100</span></b></div>
+      <div class="scorebar"><div style="width:${sc}%;background:${col}"></div></div>
+      <p style="color:var(--muted);margin:0 0 8px">This is what an attacker parked outside your house would notice. Fix each one.</p>
+      ${list.length ? list.map(i => `<div class="issue ${i.sev}"><b>${i.sev === 'high' ? '🔴' : i.sev === 'med' ? '🟠' : '🔵'} ${esc(i.t)}</b><small>${esc(i.d)}</small></div>`).join('')
+        : '<div class="issue low" style="border-color:var(--good);background:#13261b"><b>✅ Nothing to attack!</b><small>Your router is locked down. An attacker would move on to an easier target.</small></div>'}
+      ${!R().broadcast ? '<div class="issue low"><b>ℹ️ Hidden SSID</b><small>Hiding the network name does not really protect you. Wi-Fi scanners still see it. Encryption and strong passwords are what matter.</small></div>' : ''}`;
+    return;
+  }
+  el.innerHTML = MISSIONS.map((m, idx) => {
+    const st = missionStatus(m), open = S.open === m.id;
+    const ic = st === 'done' ? '✅' : st === 'broke' ? '⚠️' : '⬜';
+    let body = '';
+    if (open){
+      body = `<div class="mbody"><div class="why">${esc(m.why)}</div><ol>${m.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`;
+      if (st === 'broke') body += `<div class="hint" style="background:#2b1d10">⚠️ This mission was complete, but a later change undid it. Check it again.</div>`;
+      if (m.recon && !S.done.recon) body += `<div class="field"><label>My Default Gateway is:</label><input id="reconIn" placeholder="e.g. 192.168.x.x"></div><button class="btn small primary" data-act="recon">Check</button> <span style="color:var(--warn)">${esc(S.reconMsg)}</span>`;
+      if (S.hintShown[m.id]) body += `<div class="hint">💡 ${esc(m.hint)}</div>`;
+      else body += ` <button class="btn small" data-act="hint" data-id="${m.id}" style="margin-top:6px">💡 Show hint</button>`;
+      body += `</div>`;
+    }
+    return `<div class="mission ${st}"><div class="mhead" data-act="open" data-id="${m.id}"><span class="ic">${ic}</span><span class="t">${m.bonus ? '' : (idx + 1) + '. '}${esc(m.t)}${m.bonus ? '<span class="bonus-tag">BONUS</span>' : ''}</span><span style="color:var(--muted)">${open ? '▾' : '▸'}</span></div>${body}</div>`;
+  }).join('');
+}
+
+/* ================= laptop ================= */
+function wifiTab(){
+  const r = R(), up = wifiUp(), j = L().joined;
+  const secName = r.security === 'none' ? 'Open' : SEC_LABEL[r.security];
+  const weak = (r.security === 'none' || r.security === 'wep' || r.security === 'wpa');
+  let h = `<div class="lstatus ${up ? 'good' : 'bad'}">${up ? `✅ Connected to <b>${esc(r.ssid)}</b><br><small>Security: ${esc(secName)}</small>${weak ? '<div class="weak">⚠️ Weak Security: this network uses an older security standard.</div>' : ''}`
+    : `❌ ${esc(wifiProblem())}`}</div>`;
+  const nets = [];
+  if (r.broadcast) nets.push({ ssid:r.ssid, sec:r.security, sig:4, main:true });
+  if (r.guest) nets.push({ ssid:r.guestSsid, sec:r.guestPass ? 'wpa2' : 'none', sig:4, guest:true });
+  nets.push({ ssid:'Smith-Family', sec:'wpa2', sig:2 }, { ssid:'Ring-Doorbell-88', sec:'wpa2', sig:1 }, { ssid:'DIRECT-printer-EPSON', sec:'wpa2', sig:1 });
+  h += `<div style="color:var(--muted);font-size:12px;margin:4px 0 6px">Networks in range</div>`;
+  for (const n of nets){
+    const isCur = up && n.main;
+    h += `<div class="net" data-act="pick" data-ssid="${esc(n.ssid)}"><span>${'▂▄▆█'.slice(0, n.sig)}</span><span class="nm">${esc(n.ssid)}${isCur ? ' ✓' : ''}</span><small>${n.sec === 'none' ? 'Open' : '🔒 ' + (n.main ? SEC_LABEL[n.sec] : 'WPA2')}</small></div>`;
+    if (S.joinTarget === n.ssid && !isCur){
+      h += `<div class="joinbox">${n.sec === 'none' ? '<small>Open network: no password.</small>' : `<div class="field"><label>Wi-Fi password for ${esc(n.ssid)}</label><input id="joinPass" type="text" autocomplete="off"></div>`}
+        <button class="btn small primary" data-act="join" data-ssid="${esc(n.ssid)}">Join</button> <button class="btn small" data-act="pick" data-ssid="">Cancel</button></div>`;
+    }
+  }
+  h += `<button class="btn small" data-act="hidden">Join hidden network…</button> `;
+  if (j) h += `<button class="btn small" data-act="disconnect">Disconnect</button>`;
+  if (S.hiddenForm){
+    h += `<div class="joinbox" style="margin-top:8px"><div class="field"><label>Network name (SSID)</label><input id="hidSsid"></div><div class="field"><label>Password</label><input id="hidPass"></div><button class="btn small primary" data-act="joinHidden">Join</button></div>`;
+  }
+  return h;
+}
+function tcpTab(){
+  const l = L(), c = cfg(), st = l.st;
+  const rc = c ? reach(c) : { ok:false }, nc = c ? net(c) : { ok:false };
+  const dn = c && nc.ok ? lookup('www.lancers.school', c).st : 'none';
+  let h = `<div class="cur"><b>Current settings</b> (${l.mode === 'dhcp' ? 'Using DHCP' : 'Manual'})<br>
+    IP Address: ${c && c.ip ? esc(c.ip) : '—'}<br>Subnet Mask: ${c && c.mask ? esc(c.mask) : '—'}<br>Router: ${c && c.gw ? esc(c.gw) : '—'}<br>DNS: ${c ? esc([c.dns1, c.dns2].filter(Boolean).join(', ') || '—') : '—'}<br>
+    Reach router: <span class="${rc.ok ? 'ok' : 'no'}">${rc.ok ? 'Yes' : 'No'}</span> · Internet: <span class="${nc.ok ? 'ok' : 'no'}">${nc.ok ? 'Yes' : 'No'}</span> · DNS: <span class="${dn === 'ok' ? 'ok' : 'no'}">${dn === 'ok' ? 'Working' : dn === 'evil' ? 'Suspicious!' : 'Not working'}</span></div>
+  <div class="field"><label>Configure IPv4</label><select id="ipMode"><option value="dhcp" ${l.mode === 'dhcp' ? 'selected' : ''}>Using DHCP (automatic)</option><option value="static" ${l.mode === 'static' ? 'selected' : ''}>Manually (static IP)</option></select></div>
+  <div id="manualBox" style="${l.mode === 'static' ? '' : 'opacity:.45'}">
+    <div class="field"><label>IP Address</label><input id="sIp" value="${esc(st.ip)}" placeholder="e.g. 10.10.10.25"></div>
+    <div class="field"><label>Subnet Mask</label><input id="sMask" value="${esc(st.mask)}" placeholder="e.g. 255.255.255.0"></div>
+    <div class="field"><label>Router (Default Gateway)</label><input id="sGw" value="${esc(st.gw)}"></div>
+    <div class="field"><label>DNS Server 1</label><input id="sDns1" value="${esc(st.dns1)}"></div>
+    <div class="field"><label>DNS Server 2</label><input id="sDns2" value="${esc(st.dns2)}"></div>
+  </div>
+  <button class="btn primary small" data-act="applyIp">Apply</button> <button class="btn small" data-act="renew">Renew DHCP Lease</button>`;
+  return h;
+}
+function termTab(){
+  return `<div class="term" id="termOut">${esc(S.term.join('\n'))}</div>
+  <div class="tline"><span>C:\\&gt;</span><input id="termIn" autocomplete="off" spellcheck="false" placeholder="type a command, e.g. ipconfig"></div>
+  <div class="quick">${['ipconfig','ipconfig /all','ipconfig /renew','ping 8.8.8.8','nslookup lancerbank.com','help','cls'].map(q => `<button class="btn small" data-act="quick" data-cmd="${q}">${q}</button>`).join('')}</div>`;
+}
+function renderLaptop(){
+  document.querySelectorAll('[data-rtab]').forEach(b => b.classList.toggle('on', b.dataset.rtab === S.ltab));
+  const el = $('#laptop');
+  el.innerHTML = S.ltab === 'wifi' ? wifiTab() : S.ltab === 'tcpip' ? tcpTab() : termTab();
+  if (S.ltab === 'term'){ const o = $('#termOut'); o.scrollTop = o.scrollHeight; }
+  if (S.ltab === 'wifi' && S.joinTarget){ const p = $('#joinPass'); if (p) p.focus(); }
+}
+
+/* ================= command prompt ================= */
+function tp(...lines){ S.term.push(...lines); if (S.term.length > 500) S.term.splice(0, S.term.length - 500); }
+function ipconfigOut(all){
+  const c = cfg(), l = L();
+  const out = ['', 'Windows IP Configuration', ''];
+  if (!c){ out.push('Wireless LAN adapter Wi-Fi:', '', '   Media State ..... : Media disconnected', ''); return out; }
+  out.push('Wireless LAN adapter Wi-Fi:', '');
+  if (all){
+    out.push('   Description ..... : Lancer Wireless Adapter', '   Physical Address  : ' + LAPTOP_MAC.replace(/:/g, '-'),
+      '   DHCP Enabled .... : ' + (l.mode === 'dhcp' ? 'Yes' : 'No'), '   Connected SSID .. : ' + R().ssid);
+  }
+  out.push('   IPv4 Address .... : ' + (c.ip || '0.0.0.0') + (c.ip && c.ip.startsWith('169.254.') ? '(Autoconfiguration)' : ''),
+    '   Subnet Mask ..... : ' + (c.mask || ''),
+    '   Default Gateway . : ' + (c.gw || ''));
+  if (all){
+    if (l.mode === 'dhcp' && c.gw) out.push('   DHCP Server ..... : ' + c.gw);
+    out.push('   DNS Servers ..... : ' + (c.dns1 || ''));
+    if (c.dns2) out.push('                       ' + c.dns2);
+  }
+  out.push('');
+  return out;
+}
+function cmdPing(target){
+  if (!target){ tp('Usage: ping <IP address or name>'); return; }
+  if (!wifiUp()){ tp('PING: transmit failed. General failure.', '(Your Wi-Fi is not connected.)', ''); return; }
+  const c = cfg(); let ip = target, label;
+  if (ip2n(target) === null){
+    const lk = lookup(target, c);
+    if (lk.st === 'ok' || lk.st === 'evil') ip = lk.ip;
+    else { tp(`Ping request could not find host ${target}. Please check the name and try again.`, ''); return; }
+  }
+  label = ip === target ? ip : `${target} [${ip}]`;
+  const ok = pingable(ip, c);
+  const local = isPrivate(ip);
+  tp('', `Pinging ${label} with 32 bytes of data:`);
+  let recv = 0;
+  for (let i = 0; i < 4; i++){
+    if (ok){ recv++; const t = local ? 1 + Math.floor(Math.random() * 3) : 14 + Math.floor(Math.random() * 18); tp(`Reply from ${ip}: bytes=32 time=${t}ms TTL=${local ? 64 : 117}`); }
+    else tp(reach(c).ok || !c.ip ? 'Request timed out.' : `Reply from ${c.ip}: Destination host unreachable.`);
+  }
+  tp('', `Ping statistics for ${ip}:`, `    Packets: Sent = 4, Received = ${recv}, Lost = ${4 - recv} (${(4 - recv) * 25}% loss),`, '');
+  if (ok && ip === '8.8.8.8' && allBeforeFinal()) S.finalPing = true;
+}
+function cmdNslookup(name){
+  if (!wifiUp()){ tp('*** Can\'t find server name: no network connection.', ''); return; }
+  const c = cfg();
+  const def = c.dns1 || c.dns2;
+  if (!def){ tp('*** Default servers are not available', '(Your laptop has no DNS server set.)', ''); return; }
+  if (!name){ tp(`Default Server:  ${srvName(def)}`, `Address:  ${def}`, ''); return; }
+  const lk = lookup(name, c);
+  const srv = lk.srv || def;
+  tp(`Server:  ${srvName(srv)}`, `Address:  ${srv}`, '');
+  if (lk.st === 'ok') tp('Non-authoritative answer:', `Name:    ${name.toLowerCase()}`, `Address:  ${lk.ip}`, '');
+  else if (lk.st === 'evil'){ tp('Non-authoritative answer:', `Name:    ${name.toLowerCase()}`, `Address:  ${EVIL}`, ''); }
+  else if (lk.st === 'nx') tp(`*** ${srvName(srv)} can't find ${name}: Non-existent domain`, '');
+  else tp('DNS request timed out.', '    timeout was 2 seconds.', `*** Request to ${srvName(srv)} timed-out`, '');
+}
+function runCmd(line){
+  line = line.trim(); if (!line) return;
+  tp('C:\\> ' + line);
+  S.hist.push(line); if (S.hist.length > 50) S.hist.shift();
+  const parts = line.split(/\s+/), cmd = parts[0].toLowerCase(), arg = (parts[1] || '');
+  if (cmd === 'cls' || cmd === 'clear'){ S.term = []; }
+  else if (cmd === 'help'){
+    tp('', 'Commands you can use:', '  ipconfig            show your IP address, subnet mask, and default gateway', '  ipconfig /all       show everything, including DNS servers and MAC address',
+      '  ipconfig /renew     ask the DHCP server for a new IP address', '  ipconfig /release   give your IP address back', '  ping <ip or name>   test whether you can reach something',
+      '  nslookup <name>     ask DNS which IP address a name belongs to', '  cls                 clear the screen', '');
+  }
+  else if (cmd === 'ipconfig'){
+    const a = arg.toLowerCase();
+    if (a === '/renew'){
+      if (!wifiUp()) tp('', 'An error occurred while renewing interface Wi-Fi : The media is disconnected.', '');
+      else if (L().mode === 'static') tp('', 'The operation failed as no adapter is in the state permissible for this operation.', '(DHCP is off: your laptop is set to a manual/static IP. Switch to DHCP in the TCP/IP tab.)', '');
+      else { const res = doLease(); if (res !== 'ok') tp('', 'An error occurred while renewing interface Wi-Fi : unable to contact your DHCP server. Request has timed out.', ''); tp(...ipconfigOut(false)); }
+    } else if (a === '/release'){
+      if (L().mode === 'dhcp' && wifiUp()){ L().lease = { ip:'', mask:'', gw:'', dns1:'', dns2:'' }; }
+      tp(...ipconfigOut(false));
+    } else { tp(...ipconfigOut(a === '/all')); if (wifiUp()) L().ranIpconfig = true; }
+  }
+  else if (cmd === 'ping') cmdPing(arg);
+  else if (cmd === 'nslookup') cmdNslookup(arg);
+  else tp(`'${parts[0]}' is not recognized as a command. Type  help  for the list.`, '');
+}
+
+/* ================= browser ================= */
+function errPage(title, code, why, tips){
+  return `<div class="err"><div class="err-ico">🙁</div><h2>${title}</h2><p>${why}</p>${tips && tips.length ? '<p><b>Try:</b></p><ul>' + tips.map(t => '<li>' + t + '</li>').join('') + '</ul>' : ''}<div class="err-code">${code}</div></div>`;
+}
+function hostOf(u){ return (u || '').trim().replace(/^https?:\/\//i, '').split(/[\/?#:]/)[0].toLowerCase(); }
+function navigate(raw){
+  S.url = (raw || '').trim();
+  $('#url').value = S.url;
+  renderPage();
+  afterAction();
+}
+function renderPage(){
+  const page = $('#page'), host = hostOf(S.url), r = R();
+  if (!host){ page.innerHTML = `<div class="newtab"><h2>New Tab</h2><p>Type your router's address (your <b>Default Gateway</b>) or a website like <b>www.lancers.school</b> in the address bar.</p></div>`; return; }
+  if (!wifiUp()){ page.innerHTML = errPage('No internet', 'ERR_INTERNET_DISCONNECTED', esc(wifiProblem()), ['Open the 📶 Wi-Fi tab and connect to your network.']); return; }
+  const c = cfg();
+  if (ip2n(host) !== null){
+    if (host === r.lanIP){
+      const rc = reach(c);
+      if (!rc.ok){ page.innerHTML = errPage("This site can't be reached", 'ERR_ADDRESS_UNREACHABLE', `${esc(host)} took too long to respond. ${esc(rc.why)}`, ['Run <b>ipconfig</b> and compare your IP address to the router\'s.', 'If you use DHCP, run <b>ipconfig /renew</b>.']); return; }
+      page.innerHTML = adminHTML(); wireAdmin(); return;
+    }
+    if (isPrivate(host)){
+      const dev = c && reach(c).ok ? otherDevices().find(d => d.online && d.ip === host) : null;
+      if (dev){ page.innerHTML = `<div class="site"><h1>${dev.icon} ${esc(dev.name)}</h1><p>This device answered, but it doesn't have a settings page you can use here.</p></div>`; return; }
+      page.innerHTML = errPage("This site can't be reached", 'ERR_CONNECTION_TIMED_OUT', `Nothing answered at <b>${esc(host)}</b>.`, ['Is this really your router\'s address? Run <b>ipconfig</b> and check your Default Gateway.', 'Did the router\'s address change?']);
+      return;
+    }
+    const n = net(c);
+    if (!n.ok){ page.innerHTML = errPage("This site can't be reached", 'ERR_NETWORK_UNREACHABLE', esc(n.why), ['Run <b>ipconfig</b> to check your settings.']); return; }
+    page.innerHTML = `<div class="site"><h1>Connected to ${esc(host)}</h1><p>The computer at this IP address answered, but it doesn't host a website. Try a name like <b>www.lancers.school</b>.</p></div>`;
+    return;
+  }
+  const n = net(c);
+  if (!n.ok){ page.innerHTML = errPage("This site can't be reached", 'ERR_NETWORK_ACCESS_DENIED', esc(n.why), ['Run <b>ipconfig</b> and check your IP address, subnet mask, and default gateway.']); return; }
+  const lk = lookup(host, c);
+  if (lk.st === 'evil'){ page.innerHTML = fakePage(host); return; }
+  if (lk.st === 'nx'){ page.innerHTML = errPage("This site can't be reached", 'DNS_PROBE_FINISHED_NXDOMAIN', `<b>${esc(host)}</b>'s server IP address could not be found. That name doesn't exist.`, ['Check the spelling.']); return; }
+  if (lk.st !== 'ok'){ page.innerHTML = errPage("This site can't be reached", 'DNS_PROBE_FINISHED_NO_INTERNET', `Your laptop is connected to the internet, but it couldn't turn <b>${esc(host)}</b> into an IP address. The DNS server isn't answering.`, ['Try <b>ping 8.8.8.8</b>. If that works, the internet is fine and the problem is DNS.', 'Check the DNS server settings.']); return; }
+  if (allBeforeFinal() && host === 'www.lancers.school') S.finalVisit = true;
+  page.innerHTML = sitePage(host, lk.ip);
+}
+function sitePage(host, ip){
+  const lock = `<div style="background:#e8f5e9;color:#1b5e20;padding:6px 14px;font-size:13px">🔒 Secure connection · ${esc(host)} · ${esc(ip)}</div>`;
+  if (host === 'www.lancers.school') return lock + `<div class="site"><h1>⚔️ Lancer News</h1><p><b>Homecoming photos are posted!</b> Check the gallery on the student portal.</p><p>🖥️ Cyber Club meets Thursday after school in the tech lab. This week: securing home routers.</p><p>🏈 Friday Night Lights: Lancers vs. Keswick at 7:00 PM.</p><p style="color:#1b7f3b;font-weight:700">✅ Page loaded. Your network works!</p></div>`;
+  if (host.endsWith('lancerbank.com')) return lock + `<div class="bank"><h2>🏦 LancerBank</h2><p>Sign in to Online Banking</p><input placeholder="Username" disabled><input placeholder="Password" type="password" disabled><p style="color:#1b7f3b;font-size:13px">✅ This is the REAL LancerBank server (${esc(ip)}). (Simulation: login is turned off.)</p></div>`;
+  return lock + `<div class="site"><h1>${esc(host)}</h1><p>✅ The page loaded from <b>${esc(ip)}</b>. DNS found the right address.</p></div>`;
+}
+function fakePage(host){
+  S.sawHijack = true;
+  return `<div class="fake-banner">🚨 SIMULATED ATTACK: This page came from <b>${EVIL}</b>, the attacker's server, not the real ${esc(host)}. Your router asked a hijacked DNS server for ${esc(host)}, and it lied.</div>
+  <div style="background:#fff3cd;color:#664d03;padding:6px 14px;font-size:13px">⚠️ Not secure · ${esc(host)} · ${EVIL}</div>
+  ${host.endsWith('lancerbank.com') ? `<div class="bank"><h2>🏦 LancerBank</h2><p>Sign in to Online Banking</p><input placeholder="Username" disabled><input placeholder="Password" type="password" disabled><p style="color:#b00020;font-size:13px">In real life this copy could look perfect. Anything typed here would go straight to the attacker. (Simulation: typing is turned off.)</p></div>`
+    : `<div class="site"><h1>${esc(host)}</h1><p style="color:#b00020">This looks like the real site, but it isn't. Run <b>nslookup ${esc(host)}</b> and compare the address.</p></div>`}`;
+}
+
+/* ================= router admin ================= */
+const RPAGES = [['status','Status'],['lan','Network (TCP/IP)'],['wan','Internet & DNS'],['wireless','Wireless'],['security','Wireless Security'],['guest','Guest Network'],['advanced','Advanced'],['devices','Connected Devices'],['firmware','Firmware Update'],['admin','Administration'],['system','System Tools']];
+function kv(k, v){ return `<div class="kv"><span>${esc(k)}</span><span>${esc(v)}</span></div>`; }
+function row(label, input, help){ return `<div class="row"><label>${label}</label>${input}${help ? `<small>${help}</small>` : ''}</div>`; }
+function tin(id, v, ph){ return `<input type="text" id="${id}" value="${esc(v)}" ${ph ? `placeholder="${esc(ph)}"` : ''} autocomplete="off" spellcheck="false">`; }
+let rmsg = { t:'', ok:true };
+function msgHTML(){ return rmsg.t ? `<div class="rt-msg ${rmsg.ok ? 'ok' : 'bad'}">${rmsg.t}</div>` : ''; }
+function meterHTML(id, p){ const s = pwScore(p); return `<div style="display:flex;gap:8px;align-items:center"><div class="meter"><div id="${id}" style="width:${(s + 1) * 20}%;background:${PW_COLOR[s]}"></div></div><small id="${id}L">${PW_LABEL[s]}</small></div>`; }
+function adminHTML(){
+  if (!S.session){
+    return `<div class="rt"><div class="rt-top"><span class="rt-logo">◆ NetHawk</span><span>AX1500 Wi-Fi Router</span></div>
+    <div class="login"><h2>Router Login</h2><label>Username</label><input id="lu" autocomplete="off"><label>Password</label><input id="lp" type="password" autocomplete="off">
+    <button class="rt-save" data-ract="login">Log In</button>${msgHTML()}<p style="font-size:12px;color:#667">Forgot your login? The default is printed on the label on the bottom of the router.</p></div></div>`;
+  }
+  const r = R();
+  const nav = RPAGES.map(([k, t]) => `<a data-rnav="${k}" class="${S.rpage === k ? 'on' : ''}">${t}</a>`).join('');
+  return `<div class="rt"><div class="rt-top"><span class="rt-logo">◆ NetHawk</span><span>AX1500</span><span class="fw">Firmware ${esc(r.firmware)}</span><button data-ract="logout">Log Out</button></div>
+  <div class="rt-body"><nav class="rt-nav">${nav}</nav><div class="rt-main">${rpage()}</div></div></div>`;
+}
+function rpage(){
+  const r = R();
+  switch (S.rpage){
+  case 'status': return `<h2>Status</h2><div class="rt-grid">
+    <div class="rt-box"><h3>Router</h3>${kv('Model','NetHawk AX1500')}${kv('Firmware',r.firmware)}${kv('MAC Address','3C:84:6A:1F:4F:2A')}</div>
+    <div class="rt-box"><h3>Local Network (LAN)</h3>${kv('Router IP',r.lanIP)}${kv('Subnet Mask',r.mask)}${kv('DHCP Server',r.dhcpOn ? 'On' : 'Off')}${kv('DHCP Pool',r.dhcpOn ? r.poolStart + ' – ' + r.poolEnd : '—')}</div>
+    <div class="rt-box"><h3>Internet (WAN)</h3>${kv('Public IP','73.42.118.9')}${kv('ISP Gateway','73.42.118.1')}${kv('Primary DNS',r.dns1 || '—')}${kv('Secondary DNS',r.dns2 || '—')}</div>
+    <div class="rt-box"><h3>Wireless</h3>${kv('Network Name',r.ssid)}${kv('Security',SEC_LABEL[r.security])}${kv('WPS',r.wps ? 'On' : 'Off')}${kv('Guest Network',r.guest ? 'On' : 'Off')}</div></div>
+    <div class="rt-info">ℹ️ The router has <b>two sides</b>. The <b>WAN</b> (Internet) side has one <b>public IP</b> from your internet company. The <b>LAN</b> side gives every device at home a <b>private IP</b> like 192.168.x.x. The router translates between them. This is called <b>NAT</b>.</div>`;
+  case 'lan': return `<h2>Network (TCP/IP)</h2>
+    <div class="rt-box"><h3>LAN Settings</h3>${row('Router IP Address', tin('f_lanIP', r.lanIP), 'Your Default Gateway')}${row('Subnet Mask', tin('f_mask', r.mask), 'Which part of the IP is the network')}</div>
+    <div class="rt-box"><h3>DHCP Server</h3>${row('DHCP Server', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_dhcp" ${r.dhcpOn ? 'checked' : ''}> Enable</label>`)}
+    ${row('Start IP Address', tin('f_ps', r.poolStart))}${row('End IP Address', tin('f_pe', r.poolEnd))}${row('Lease Time (minutes)', tin('f_lease', String(r.lease)))}</div>
+    <button class="rt-save" data-ract="saveLan">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ <b>IP address</b> = a device's address on the network.<br><b>Subnet mask</b> 255.255.255.0 means the first three numbers name the network (like a street) and the last number names the device (like a house number). Devices must be on the same "street" as the router to talk to it.<br><b>DHCP</b> automatically hands out addresses from the <b>pool</b> (start to end) so you don't have to type them. Each address is "leased" for a set time.</div>
+    <div class="rt-warn">⚠️ Changing the Router IP restarts the router. Devices keep their OLD address until they renew it.</div>`;
+  case 'wan': return `<h2>Internet & DNS</h2>
+    <div class="rt-box"><h3>Internet Connection</h3>${kv('Connection Type','Dynamic IP (DHCP from ISP)')}${kv('Public IP','73.42.118.9')}${kv('Status','Connected')}</div>
+    <div class="rt-box"><h3>DNS Servers</h3>${row('Primary DNS', tin('f_dns1', r.dns1))}${row('Secondary DNS', tin('f_dns2', r.dns2, 'optional backup'))}</div>
+    <button class="rt-save" data-ract="saveWan">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ <b>DNS</b> is the internet's phone book. It turns names like <b>lancerbank.com</b> into IP addresses. Your router asks these DNS servers, then answers for every device at home.<br><br>
+    <b>Well-known public DNS servers:</b><br>Cloudflare: 1.1.1.1 / 1.0.0.1 &nbsp;·&nbsp; Google: 8.8.8.8 / 8.8.4.4 &nbsp;·&nbsp; Quad9: 9.9.9.9 / 149.112.112.112</div>
+    <div class="rt-warn">⚠️ If an attacker changes your DNS, every device on the network can be sent to fake websites, and the address bar still shows the right name.</div>`;
+  case 'wireless': return `<h2>Wireless</h2>
+    <div class="rt-box">${row('Network Name (SSID)', tin('f_ssid', r.ssid))}
+    ${row('Broadcast SSID', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_bc" ${r.broadcast ? 'checked' : ''}> Show network name to nearby devices</label>`)}
+    ${row('Band', `<select id="f_band">${['2.4 GHz','5 GHz','2.4 GHz + 5 GHz'].map(b => `<option ${r.band === b ? 'selected' : ''}>${b}</option>`).join('')}</select>`)}
+    ${row('Channel', `<select id="f_ch">${['Auto','1','6','11','36','149'].map(b => `<option ${r.channel === b ? 'selected' : ''}>${b}</option>`).join('')}</select>`)}</div>
+    <button class="rt-save" data-ract="saveWireless">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ The <b>SSID</b> is your Wi-Fi network's name. Don't use your name, address, or the router's brand. <b>2.4 GHz</b> reaches farther; <b>5 GHz</b> is faster but shorter range. Channels 1, 6, and 11 don't overlap on 2.4 GHz.</div>
+    <div class="rt-warn">⚠️ Changing the network name disconnects every device. They must reconnect to the new name.</div>`;
+  case 'security': {
+    const opts = [['none','None (Open)','No password. Anyone can join and read traffic.',0],['wep','WEP','1997. Cracked in minutes.',0],['wpa','WPA-PSK (TKIP)','2003. Outdated, known weaknesses.',1],['wpa2','WPA2-PSK (AES)','2004. Strong if the password is strong.',2],['mixed','WPA2/WPA3 Mixed','Lets older devices use WPA2 and newer ones use WPA3.',2],['wpa3','WPA3-SAE','2018. Newest and strongest. Resists password guessing.',2]];
+    const rl = ['UNSAFE','WEAK','GOOD'];
+    return `<h2>Wireless Security</h2>
+    ${opts.map(o => `<label class="sec-opt"><input type="radio" name="sec" value="${o[0]}" ${r.security === o[0] ? 'checked' : ''}><span><b>${o[1]}</b><span class="rate r${o[3]}">${rl[o[3]]}</span><br><small>${o[2]}</small></span></label>`).join('')}
+    <div class="rt-box">${row('Wi-Fi Password', tin('f_wpass', r.wifiPass), 'WEP: exactly 5 or 13 characters. WPA/WPA2/WPA3: 8 to 63.')}${row('Strength', meterHTML('wm', r.wifiPass))}</div>
+    <div class="rt-box"><h3>WPS (Wi-Fi Protected Setup)</h3>${row('WPS', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_wps" ${r.wps ? 'checked' : ''}> Enable WPS</label>`)}${kv('Router WPS PIN', '4815-1623')}</div>
+    <button class="rt-save" data-ract="saveSec">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ <b>WPA, WPA2, and WPA3</b> are <b>encryption</b>: they scramble everything sent over the air so only people with the password can read it.<br><b>WPS is NOT encryption.</b> It's a shortcut for joining (push a button or type an 8-digit PIN instead of the password). The PIN is checked in two halves, so an attacker only needs about 11,000 guesses to get in.</div>`;
+  }
+  case 'guest': return `<h2>Guest Network</h2>
+    <div class="rt-box">${row('Guest Network', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_g" ${r.guest ? 'checked' : ''}> Enable</label>`)}${row('Guest SSID', tin('f_gs', r.guestSsid))}${row('Guest Password', tin('f_gp', r.guestPass, '12+ characters'))}
+    ${row('Isolation', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_gi" ${r.guestIso ? 'checked' : ''}> Isolate guests from my network</label>`)}</div>
+    <button class="rt-save" data-ract="saveGuest">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ A guest network gives visitors and smart gadgets internet access <b>without</b> letting them see your computers, printers, or this admin page.</div>`;
+  case 'advanced': return `<h2>Advanced</h2>
+    <div class="rt-box"><h3>Remote Management</h3>${row('Remote Management', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_rm" ${r.remote ? 'checked' : ''}> Allow access to this page from the internet (port 8080)</label>`)}</div>
+    <div class="rt-box"><h3>UPnP</h3>${row('UPnP', `<label style="width:auto;font-weight:400"><input type="checkbox" id="f_up" ${r.upnp ? 'checked' : ''}> Let devices open ports automatically</label>`)}</div>
+    <button class="rt-save" data-ract="saveAdv">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ <b>Remote management</b> puts this login page on the internet at http://73.42.118.9:8080. Attackers' bots scan the whole internet for pages like this.<br><b>UPnP</b> lets any device (including malware) open a door in the firewall without asking you.</div>`;
+  case 'devices': {
+    const c = cfg(), me = c && reach(c).ok ? [{ name:'LANCER-LAPTOP (you)', icon:'💻', ip:c.ip, mac:LAPTOP_MAC, online:true, kind:L().mode, note:'' }] : [];
+    const list = me.concat(otherDevices());
+    return `<h2>Connected Devices</h2><table class="rt-t"><tr><th>Device</th><th>IP Address</th><th>MAC Address</th><th>Type</th><th>Status</th></tr>
+    ${list.map(d => `<tr><td>${d.icon} ${esc(d.name)}</td><td>${esc(d.online ? d.ip : '—')}</td><td>${esc(d.mac)}</td><td>${d.kind === 'static' ? 'Static' : 'DHCP'}</td><td>${d.online ? '🟢 Online' : '🔴 ' + esc(d.note)}</td></tr>`).join('')}</table>
+    <div class="rt-info">ℹ️ Every network card has a permanent <b>MAC address</b> (hardware ID). IP addresses can change; MAC addresses don't. Check this list for devices you don't recognize.</div>`;
+  }
+  case 'firmware': return `<h2>Firmware Update</h2>
+    <div class="rt-box">${kv('Current Version', r.firmware)}${S.fwChecked ? kv('Latest Version', LATEST_FW) : ''}</div>
+    ${r.firmware === LATEST_FW ? '<div class="rt-msg ok">✅ Your firmware is up to date.</div>' : S.fwChecked ? `<div class="rt-warn">A new version (${LATEST_FW}) is available. It fixes 3 security vulnerabilities, including one that lets attackers bypass the login page.</div><button class="rt-save" data-ract="installFw">Install Update</button><div id="fwProg" style="margin-top:10px"></div>` : `<button class="rt-save" data-ract="checkFw">Check for Updates</button>`}
+    <div class="rt-info">ℹ️ <b>Firmware</b> is the software that runs the router. Companies release updates when security holes are found. Old firmware = known holes.</div>`;
+  case 'admin': return `<h2>Administration</h2>
+    <div class="rt-box"><h3>Change Admin Password</h3>${row('Username', '<span style="font-family:var(--mono)">admin</span>')}${row('Old Password', '<input type="password" id="f_op" autocomplete="off">')}${row('New Password', '<input type="password" id="f_np" autocomplete="off">')}${row('Confirm New Password', '<input type="password" id="f_cp" autocomplete="off">')}${row('Strength', meterHTML('am', ''))}</div>
+    <button class="rt-save" data-ract="saveAdmin">Save</button>${msgHTML()}
+    <div class="rt-info">ℹ️ The admin password protects the router's settings. The Wi-Fi password protects who can join. They should be <b>different</b>.</div>`;
+  case 'system': return `<h2>System Tools</h2>
+    <div class="rt-box"><h3>Reboot</h3><p>Restart the router. Settings are kept.</p><button class="rt-save" data-ract="reboot">Reboot</button></div>
+    <div class="rt-box"><h3>Factory Reset</h3><p>Erase ALL settings and go back to what's on the sticker.</p><button class="rt-save red" data-ract="factory">Factory Reset</button></div>${msgHTML()}`;
+  }
+  return '';
+}
+function wireAdmin(){
+  const w = $('#f_wpass'); if (w) w.addEventListener('input', () => setMeter('wm', w.value));
+  const n = $('#f_np'); if (n) n.addEventListener('input', () => setMeter('am', n.value));
+  const lp = $('#lp'); if (lp) lp.addEventListener('keydown', e => { if (e.key === 'Enter') routerAct('login'); });
+}
+function setMeter(id, p){ const s = pwScore(p), b = document.getElementById(id), l = document.getElementById(id + 'L'); if (b){ b.style.width = (s + 1) * 20 + '%'; b.style.background = PW_COLOR[s]; } if (l) l.textContent = PW_LABEL[s]; }
+const val = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+const chk = id => { const e = document.getElementById(id); return !!(e && e.checked); };
+function bad(t){ rmsg = { t:'❌ ' + t, ok:false }; refreshAdmin(); }
+function good(t){ rmsg = { t:'✅ ' + t, ok:true }; refreshAdmin(); }
+function refreshAdmin(){ renderPage(); afterAction(); }
+function rebootRouter(text, after){
+  S.session = false; rmsg = { t:'', ok:true };
+  $('#page').innerHTML = `<div class="err"><div class="err-ico">🔄</div><h2>${text || 'Router restarting…'}</h2><p>Please wait.</p></div>`;
+  afterAction();
+  setTimeout(() => { if (after) after(); renderPage(); afterAction(); }, 2200);
+}
+function wifiChanged(){
+  toast('Wi-Fi settings changed. All wireless devices were disconnected and must rejoin.', true);
+}
+function routerAct(a){
+  const r = R();
+  if (a === 'login'){
+    if (val('lu') === 'admin' && document.getElementById('lp').value === r.adminPass){ S.session = true; S.done.login = true; rmsg = { t:'', ok:true }; S.rpage = 'status'; refreshAdmin(); }
+    else bad('Incorrect username or password.');
+    return;
+  }
+  if (a === 'logout'){ S.session = false; rmsg = { t:'', ok:true }; refreshAdmin(); return; }
+  if (a === 'saveLan'){
+    const ip = val('f_lanIP'), m = val('f_mask'), on = chk('f_dhcp'), ps = val('f_ps'), pe = val('f_pe'), lease = parseInt(val('f_lease'), 10);
+    if (ip2n(ip) === null) return bad(`"${esc(ip)}" is not a valid IP address. Use four numbers 0–255 separated by dots.`);
+    if (!maskOK(m)) return bad(`"${esc(m)}" is not a valid subnet mask. Example: 255.255.255.0`);
+    if (!isPrivate(ip)) return bad('The router\'s LAN address must be a private address: 10.x.x.x, 172.16–31.x.x, or 192.168.x.x.');
+    if (!isHost(ip, m)) return bad(`${esc(ip)} is the network or broadcast address for this subnet. Pick another (usually .1).`);
+    if (on){
+      if (ip2n(ps) === null || ip2n(pe) === null) return bad('The DHCP start and end must be valid IP addresses.');
+      if (!sameNet(ps, ip, m) || !sameNet(pe, ip, m)) return bad(`The DHCP pool must be on the same network as the router (${esc(n2ip(netOf(ip, m)))}/${prefix(m)}).`);
+      if (ip2n(ps) > ip2n(pe)) return bad('The start address must come before the end address.');
+      if (!isHost(ps, m) || !isHost(pe, m)) return bad('The pool can\'t include the network or broadcast address.');
+      if (ip2n(ip) >= ip2n(ps) && ip2n(ip) <= ip2n(pe)) return bad('The router\'s own IP can\'t be inside the DHCP pool.');
+      if (!(lease >= 5 && lease <= 10080)) return bad('Lease time should be between 5 and 10080 minutes.');
+    }
+    const moved = ip !== r.lanIP || m !== r.mask;
+    Object.assign(r, { lanIP:ip, mask:m, dhcpOn:on, poolStart:on ? ps : r.poolStart, poolEnd:on ? pe : r.poolEnd, lease:on ? lease : r.lease });
+    if (moved) rebootRouter('Router restarting with new address ' + ip + '…');
+    else good('Saved.');
+    return;
+  }
+  if (a === 'saveWan'){
+    const d1 = val('f_dns1'), d2 = val('f_dns2');
+    if (ip2n(d1) === null) return bad('Primary DNS must be a valid IP address, like 1.1.1.1');
+    if (d2 && ip2n(d2) === null) return bad('Secondary DNS must be a valid IP address or blank.');
+    if (d2 && d2 === d1) return bad('Use a different server for Secondary DNS so you have a backup.');
+    r.dns1 = d1; r.dns2 = d2;
+    const up = upstream();
+    good('Saved. ' + (up === 'good' ? 'DNS is working.' : up === 'evil' ? '' : 'Warning: these DNS servers are not answering.'));
+    return;
+  }
+  if (a === 'saveWireless'){
+    const ssid = val('f_ssid');
+    if (ssid.length < 1 || ssid.length > 32) return bad('The SSID must be 1 to 32 characters.');
+    const changed = ssid !== r.ssid;
+    Object.assign(r, { ssid, broadcast:chk('f_bc'), band:val('f_band'), channel:val('f_ch') });
+    if (changed){ wifiChanged(); }
+    good('Saved.');
+    return;
+  }
+  if (a === 'saveSec'){
+    const sel = document.querySelector('input[name=sec]:checked'); const sec = sel ? sel.value : r.security;
+    const p = document.getElementById('f_wpass').value; let wps = chk('f_wps'), note = '';
+    if (sec === 'wep' && !(p.length === 5 || p.length === 13)) return bad('WEP keys must be exactly 5 or 13 characters.');
+    if (['wpa','wpa2','mixed','wpa3'].includes(sec) && (p.length < 8 || p.length > 63)) return bad('WPA passwords must be 8 to 63 characters.');
+    if (sec === 'wpa3' && wps){ wps = false; note = ' WPS was turned off because WPA3 does not allow it.'; }
+    const changed = sec !== r.security || (sec !== 'none' && p !== r.wifiPass);
+    Object.assign(r, { security:sec, wifiPass:sec === 'none' ? '' : p, wps });
+    if (changed) wifiChanged();
+    good('Saved.' + note);
+    return;
+  }
+  if (a === 'saveGuest'){
+    const on = chk('f_g'), gs = val('f_gs'), gp = document.getElementById('f_gp').value;
+    if (on && (gs.length < 1 || gs.length > 32)) return bad('Guest SSID must be 1 to 32 characters.');
+    if (on && gs === r.ssid) return bad('The guest network needs a different name than your main network.');
+    if (on && gp && (gp.length < 8 || gp.length > 63)) return bad('Guest password must be 8 to 63 characters.');
+    Object.assign(r, { guest:on, guestSsid:gs || r.guestSsid, guestPass:gp, guestIso:chk('f_gi') });
+    good('Saved.' + (on && !gp ? ' Warning: your guest network is open (no password).' : ''));
+    return;
+  }
+  if (a === 'saveAdv'){ r.remote = chk('f_rm'); r.upnp = chk('f_up'); good('Saved.'); return; }
+  if (a === 'checkFw'){ S.fwChecked = true; refreshAdmin(); return; }
+  if (a === 'installFw'){
+    const pg = document.getElementById('fwProg');
+    pg.innerHTML = '<div class="progress"><div id="fwBar"></div></div><small>Installing… do not turn off the router.</small>';
+    requestAnimationFrame(() => { const b = document.getElementById('fwBar'); if (b) b.style.width = '100%'; });
+    setTimeout(() => { r.firmware = LATEST_FW; rebootRouter('Firmware installed. Router restarting…'); }, 2900);
+    return;
+  }
+  if (a === 'saveAdmin'){
+    const op = document.getElementById('f_op').value, np = document.getElementById('f_np').value, cp = document.getElementById('f_cp').value;
+    if (op !== r.adminPass) return bad('Old password is incorrect.');
+    if (np.length < 6) return bad('New password is too short.');
+    if (np !== cp) return bad('The new passwords don\'t match.');
+    if (np === r.wifiPass) return bad('Don\'t reuse your Wi-Fi password as the admin password.');
+    r.adminPass = np; S.session = false;
+    rmsg = { t:'✅ Password changed. Log in with your new password.' + (strongAdmin(np) ? '' : ' (Hint: it isn\'t strong enough yet for the mission.)'), ok:true };
+    refreshAdmin();
+    return;
+  }
+  if (a === 'reboot'){ rebootRouter(); return; }
+  if (a === 'factory'){ askFactory(); return; }
+}
+function factoryReset(){
+  S.router = defRouter(); S.session = false; S.fwChecked = false; S.others = { ssid:STICKER.ssid, pass:STICKER.key }; rmsg = { t:'', ok:true };
+  toast('Router reset to factory settings (everything on the sticker).', true);
+  rebootRouter('Factory reset… restoring default settings');
+}
+function askFactory(){
+  modal(`<h2>Factory reset the router?</h2><p>This erases <b>every</b> change you made to the router and puts back the settings on the sticker (admin/admin, WEP, hijacked DNS…). Your completed recon and login missions stay checked.</p>
+    <button class="btn danger" data-act="doFactory">Yes, reset it</button> <button class="btn" data-act="closeModal">Cancel</button>`);
+}
+
+/* ================= toast / modal / cert ================= */
+let toastT = null;
+function toast(t, isBad){ const e = $('#toast'); e.textContent = t; e.className = isBad ? 'bad' : ''; e.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => e.style.display = 'none', 4200); }
+function modal(html){ $('#modalBox').innerHTML = html; $('#modal').style.display = 'flex'; }
+function closeModal(){ $('#modal').style.display = 'none'; }
+function certCode(){ let h = 7; for (const ch of (S.name || '').toUpperCase()) h = (h * 33 + ch.charCodeAt(0)) % 9000; return 'LOCKDOWN-' + (1000 + h); }
+function showCert(){
+  const mins = Math.max(1, Math.round((Date.now() - S.start) / 60000));
+  modal(`<div class="cert"><div style="font-size:42px">🛡️</div><h2>Network Secured!</h2><p><b>${esc(S.name)}</b> locked down a home router.</p>
+  <p>Security Score: <b>${score()}/100</b> · Hints used: <b>${S.hints}</b> · Time: <b>${mins} min</b> · Bonus: <b>${MISSIONS.find(m => m.id === 'b1').check() ? 'Yes' : 'No'}</b></p>
+  <div class="code">${certCode()}</div><p style="color:var(--muted)">Take a screenshot of this screen and turn it in.</p>
+  <button class="btn primary" data-act="closeModal">Close</button></div>`);
+}
+function nameModal(){
+  modal(`<h2>📡 Lancer Router Lab</h2><p>A family's home router was set up badly and someone has already messed with it. Your job: get on the network, find out what's wrong, and lock it down without breaking the internet.</p>
+  <label>Your first and last name</label><input id="nameIn" autocomplete="off"><button class="btn primary" data-act="setName">Start</button>`);
+  setTimeout(() => { const n = $('#nameIn'); if (n) n.focus(); }, 50);
+}
+
+/* ================= refresh ================= */
+function afterAction(){
+  for (const m of MISSIONS){
+    if (m.check() && !S.ever[m.id]){
+      S.ever[m.id] = true;
+      if (S.open === m.id){ const nx = REQ.find(x => !x.check()); S.open = nx ? nx.id : null; }
+    }
+  }
+  renderHeader(); renderRouterCard(); renderLeft();
+  if (!S.certShown && MISSIONS.find(m => m.id === 'm13').check()){ S.certShown = true; showCert(); }
+  save();
+}
+function refreshAll(){ renderPage(); renderLaptop(); afterAction(); }
+
+/* ================= events ================= */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-ltab],[data-rtab],[data-rnav],[data-ract]');
+  if (!t) return;
+  if (t.dataset.ltab){ S.ltabL = t.dataset.ltab; renderLeft(); save(); return; }
+  if (t.dataset.rtab){ S.ltab = t.dataset.rtab; renderLaptop(); save(); if (S.ltab === 'term') $('#termIn').focus(); return; }
+  if (t.dataset.rnav){ S.rpage = t.dataset.rnav; rmsg = { t:'', ok:true }; renderPage(); save(); return; }
+  if (t.dataset.ract){ routerAct(t.dataset.ract); return; }
+  const a = t.dataset.act;
+  if (a === 'go'){ navigate($('#url').value); return; }
+  if (a === 'open'){ S.open = S.open === t.dataset.id ? null : t.dataset.id; renderLeft(); save(); return; }
+  if (a === 'hint'){ S.hintShown[t.dataset.id] = true; S.hints++; renderLeft(); save(); return; }
+  if (a === 'recon'){
+    const v = ($('#reconIn').value || '').trim().replace(/^https?:\/\//, '');
+    if (!L().ranIpconfig){ S.reconMsg = 'Run ipconfig in the Command Prompt first.'; }
+    else if (v === R().lanIP){ S.done.recon = true; S.reconMsg = ''; toast('Correct! The Default Gateway is the router.'); }
+    else S.reconMsg = 'Not quite. Look for "Default Gateway" in the ipconfig output.';
+    afterAction(); return;
+  }
+  if (a === 'pick'){ S.joinTarget = t.dataset.ssid || null; S.hiddenForm = false; renderLaptop(); return; }
+  if (a === 'join'){ joinNet(t.dataset.ssid, ($('#joinPass') || {}).value || ''); return; }
+  if (a === 'hidden'){ S.hiddenForm = !S.hiddenForm; S.joinTarget = null; renderLaptop(); return; }
+  if (a === 'joinHidden'){ joinNet(($('#hidSsid').value || '').trim(), $('#hidPass').value || '', true); return; }
+  if (a === 'disconnect'){ L().joined = null; toast('Disconnected from Wi-Fi.'); refreshAll(); return; }
+  if (a === 'applyIp'){ applyIp(); return; }
+  if (a === 'renew'){
+    if (L().mode !== 'dhcp'){ toast('Your laptop is set to Manual. Choose "Using DHCP" and click Apply first.', true); return; }
+    if (!wifiUp()){ toast('Connect to Wi-Fi first.', true); return; }
+    const res = doLease(); toast(res === 'ok' ? 'Got a new lease: ' + L().lease.ip : 'No DHCP server answered. Got a self-assigned 169.254.x.x address.', res !== 'ok'); refreshAll(); return;
+  }
+  if (a === 'quick'){ runCmd(t.dataset.cmd); refreshAll(); const i = $('#termIn'); if (i) i.focus(); return; }
+  if (a === 'factory'){ askFactory(); return; }
+  if (a === 'doFactory'){ closeModal(); factoryReset(); return; }
+  if (a === 'closeModal'){ closeModal(); return; }
+  if (a === 'restart'){ modal(`<h2>Restart the whole lab?</h2><p>This erases all your progress and starts over.</p><button class="btn danger" data-act="doRestart">Yes, start over</button> <button class="btn" data-act="closeModal">Cancel</button>`); return; }
+  if (a === 'doRestart'){ const nm = S.name; S = fresh(); S.name = nm; closeModal(); $('#url').value = ''; refreshAll(); return; }
+  if (a === 'setName'){ const n = ($('#nameIn').value || '').trim(); if (!n) return; S.name = n; S.start = Date.now(); closeModal(); refreshAll(); return; }
+});
+function joinNet(ssid, pass, hidden){
+  const r = R();
+  if (!ssid){ toast('Type a network name.', true); return; }
+  if (r.guest && ssid === r.guestSsid){
+    if (r.guestPass && pass !== r.guestPass){ toast('Incorrect password for ' + ssid + '.', true); return; }
+    toast('The guest network works, but guests are isolated and can\'t reach the router or your devices. Join your main network to keep working.');
+    S.joinTarget = null; renderLaptop(); return;
+  }
+  if (ssid !== r.ssid || (hidden && false)){
+    if (['Smith-Family','Ring-Doorbell-88','DIRECT-printer-EPSON'].includes(ssid)) toast('That isn\'t your network, and you don\'t have its password. Never try to get onto networks you don\'t own.', true);
+    else toast('Network "' + ssid + '" not found.', true);
+    return;
+  }
+  if (r.security !== 'none' && pass !== r.wifiPass){ toast('Incorrect Wi-Fi password for ' + ssid + '.', true); return; }
+  L().joined = { ssid, pass:r.security === 'none' ? '' : pass };
+  if (L().mode === 'dhcp') doLease();
+  S.joinTarget = null; S.hiddenForm = false;
+  toast('Connected to ' + ssid + '.');
+  refreshAll();
+}
+function applyIp(){
+  const l = L(), mode = $('#ipMode').value;
+  if (mode === 'dhcp'){ l.mode = 'dhcp'; if (wifiUp()) doLease(); toast('Using DHCP.' + (wifiUp() ? ' Got ' + (l.lease.ip || 'no address') : '')); refreshAll(); return; }
+  const st = { ip:val('sIp'), mask:val('sMask'), gw:val('sGw'), dns1:val('sDns1'), dns2:val('sDns2') };
+  if (ip2n(st.ip) === null){ toast('IP Address is not valid.', true); return; }
+  if (!maskOK(st.mask)){ toast('Subnet Mask is not valid (example: 255.255.255.0).', true); return; }
+  for (const k of ['gw','dns1','dns2']) if (st[k] && ip2n(st[k]) === null){ toast((k === 'gw' ? 'Router' : 'DNS server') + ' address is not valid.', true); return; }
+  l.mode = 'static'; l.st = st;
+  let warn = '';
+  if (inPool(st.ip)) warn = ' Warning: that address is inside the DHCP pool, so the router might give it to another device too.';
+  toast('Manual settings applied.' + warn, !!warn);
+  refreshAll();
+}
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'url' && e.key === 'Enter'){ navigate(e.target.value); }
+  if (e.target.id === 'termIn'){
+    if (e.key === 'Enter'){ const v = e.target.value; runCmd(v); S.hIdx = null; refreshAll(); const i = $('#termIn'); if (i) i.focus(); }
+    if (e.key === 'ArrowUp' && S.hist.length){ S.hIdx = S.hIdx == null ? S.hist.length - 1 : Math.max(0, S.hIdx - 1); e.target.value = S.hist[S.hIdx]; e.preventDefault(); }
+  }
+  if (e.target.id === 'joinPass' && e.key === 'Enter'){ joinNet(S.joinTarget, e.target.value); }
+  if (e.target.id === 'nameIn' && e.key === 'Enter'){ document.querySelector('[data-act=setName]').click(); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'ipMode'){ const b = $('#manualBox'); if (b) b.style.opacity = e.target.value === 'static' ? 1 : .45; } });
+
+/* ================= start ================= */
+$('#url').value = S.url || '';
+refreshAll();
+if (!S.name) nameModal();
+window.LAB = { S:() => S, issues, score, MISSIONS };
+</script>
+</body>
+</html>
